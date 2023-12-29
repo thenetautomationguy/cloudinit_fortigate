@@ -1,0 +1,7 @@
+{
+    "vmserialnumber":"FGVM04XXXXXXXX",
+    "hostname":"testvm001",
+    "publicip":"1.1.1.2",
+    "publicsn":"255.255.255.0",
+    "publicgw":"1.1.1.1"
+}

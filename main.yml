@@ -1,0 +1,62 @@
+- hosts: localhost
+  tasks:
+    - name: get FortiCare API access token
+      uri:
+        url: 'https://customerapiauth.fortinet.com/api/v1/oauth/token/'
+        method: POST
+        validate_certs: no
+        body: |
+          {
+            "username":"{{vault_forticare_api_user}}",
+            "password":"{{vault_forticare_api_secret}}",
+            "client_id":"assetmanagement",
+            "grant_type":"password"
+          }
+        body_format: json
+        headers:
+          Content-Type: 'application/json'
+      register: token
+      no_log: True
+    - name: download license from FortiCare portal
+      uri:
+        url: 'https://support.fortinet.com/ES/api/registration/v3/licenses/download'
+        method: POST
+        validate_certs: no
+        body: |
+          {
+            "serialNumber":"{{vmserialnumber}}"",
+          }
+        body_format: json
+        status_code: 
+        - 400
+        - 200
+        headers:
+          Authorization: 'Bearer {{token.json.access_token}}'
+          Content-Type: 'application/json'
+      register: license
+    - name: create openstack folder
+      ansible.builtin.file:
+        path: "./config-drive/openstack"
+        state: directory
+    - name: create content folder on Ansible Ccntroller
+      ansible.builtin.file:
+        path: "./config-drive/openstack/content"
+        state: directory
+    - name: create lastest folder
+      ansible.builtin.file:
+        path: "./config-drive/openstack/latest"
+        state: directory
+    - name: generate Fortigate configuration file and save under folder ./config-drive/openstack/latest as user_data
+      template:
+        src: cli_template.j2
+        dest: ./config-drive/openstack/latest/user_data
+    - name: generate Fortigate license file and save under folder ./config-drive/openstack/content as 0000
+      template:
+        src: fortigate_license.j2
+        dest: ./config-drive/openstack/content/0000    
+    - name: create cloudinit.iso and save under folder output
+      ansible.builtin.command: "xorriso -as mkisofs -V config-2 -o cloudinit.iso config-drive/"
+    - name: delete working directory ./config-drive/openstack
+      ansible.builtin.file:
+       path: "./config-drive"
+       state: absent

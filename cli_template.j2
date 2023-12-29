@@ -1,0 +1,15 @@
+config system interface
+  edit port4
+    set mode static
+    set ip {{ publicip }} {{publicsn}}
+    set allowaccess https ssh
+end
+config router static
+  edit 0
+    set gateway {{publicgw}}
+    set device port4
+end
+config system global
+    set admin-sport 1443
+    set hostname {{ hostname }}
+end
